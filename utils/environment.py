@@ -26,3 +26,9 @@ class EnvSetting(BaseSettings):
         env_file_encoding = "utf-8"
 
 env = EnvSetting()
+
+class LabelInfo(BaseModel):
+    style_dict:dict = {'S1': 'Oral', 'S2': 'Mono', 'Read': 'News', 'S4': 'Conv', 'S5': 'Relay'}
+    emotion_dict:dict = {'E1': 'Happy', 'E2': 'Sad', 'E3': 'Angry', 'E4': 'Anxious', 'E5': 'Hurt', 'E6': 'Embarrassed', 'E7': 'Neutrality'}
+
+li = LabelInfo()
