@@ -2,8 +2,7 @@ from fastapi import UploadFile, APIRouter
 
 from cores.coreClass import coreClass
 from utils.environment import hp
-from utils.function import *
-from routers.item import ItemRequest, ItemResponse
+from routers import ItemRequest, ItemResponse, sample_1
 
 core = coreClass(device=hp.device)
 router = APIRouter(prefix="/route")
