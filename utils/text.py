@@ -1,18 +1,65 @@
-import csv
+import os, json, csv
+import srt
 
+from datetime import timedelta
 from phonemizer import phonemize
-from hangul_romanize import Transliter
-from hangul_romanize.rule import academic
+from phonemizer.backend import EspeakBackend
+from phonemizer.separator import Separator
+from phonemizer.punctuation import Punctuation
 
-ts = Transliter(academic)
+_punctuation = ';:,.!?¡¿—-~"/“” '
+english_pattern = re.compile(r'[a-zA-Z]')
+kakasi = pykakasi.kakasi()
 
-def romanize_ko_to_en(ko_text:str):
-    return ts.translit(ko_text)
-
-def phonemize_text(text:str, language:str='en-us') -> list:
+def phonemize_texts(text:str, language:str='en-us') -> list:
     '''recommeded language: en-us, ko'''
     return phonemize(text, language=language, backend='espeak', strip=True, preserve_punctuation=True, with_stress=True)
 
+def phonemize_text(text:str, language:str='en-us') -> list:
+    sentences = text.split('.')  # 문장 분할
+    phonemed_sentences = []
+
+    # EspeakBackend 초기화
+    backend = EspeakBackend(
+        language=language,
+        preserve_punctuation=True,
+        with_stress=True,
+        language_switch='remove-flags'
+    )
+    separator = Separator(phone=' ', word=' ', syllable='')
+
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if sentence:
+            phonemed_text = backend.phonemize(
+                [sentence],
+                separator=separator
+            )
+            phonemed_sentences.append(phonemed_text[0])  # 리스트에서 문자열 추출
+
+    return phonemed_sentences
+
+def ja_convert_hiragana(text):
+    result = kakasi.convert(text)
+    return "".join([item['hira'] for item in result]).replace('ー',':')
+
+def ja_convert_katakana(text):
+    result = kakasi.convert(text)
+    return "".join([item['kana'] for item in result]).replace('ー',':')
+
+def generate_timestamp():
+    return datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+def generate_unique_name(length:int=10):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+    
+def seconds_to_time_format(seconds):
+    td = timedelta(seconds=seconds)
+    total_seconds = int(td.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    milliseconds = td.microseconds // 1000
+    return f"{hours:02}:{minutes:02}:{seconds:02},{milliseconds:03}"
 
 def export_metadata_to_txt(sentences:list, file_path:str, encoding:str='utf-8'):
     with open(file_path, 'w', encoding=encoding) as f:
@@ -80,3 +127,21 @@ def one_hot_encode(speaker_list, json_file):
         encoded_list.append(one_hot_vector)
 
     return encoded_list
+
+def load_srt(file_path:str, encoding:str='utf-8'):
+    '''
+    output example:   
+        for subtitle in subtitles:
+            print("Index:", subtitle.index)
+            print("Start:", subtitle.start)
+            print("End:", subtitle.end)
+            print("Content:", subtitle.content)
+    '''
+
+    with open(file_path, 'r', encoding=encoding) as f:
+        srt_content = f.read()
+    subtitles = list(srt.parse(srt_content))
+    return subtitles
+
+def get_space_position(text):
+    return [index for index, char in enumerate(text) if char == ' ']

@@ -1,7 +1,32 @@
+# DL package
 torch # 2.4.0-cuda12.1
 torchvision
 torchaudio
+tensorboard
+transformers
+munch
+accelerate
+einops
+einops-exts
+# Server package
 fastapi
 uvicorn
 pydantic-settings
 python-multipart
+# Basic package
+matplotlib
+pyyaml
+tqdm
+# Audio package
+SoundFile
+librosa
+pydub
+noisereduce
+denoiser
+# Text package
+phonemizer # espeak-ng dependency
+srt
+pykakasi # japaness convert hiragana
+typing
+typing-extensions
+faster-whisper # stt package

@@ -1,0 +1,47 @@
+x-common-variables: &common-variables
+  ENV_STATE: $ENV_STATE
+  ENV_INDEX: $ENV_INDEX
+  GPU_DEVICE_INDEX: $GPU_DEVICE_INDEX
+  TTS_SERVER_HOST: $TTS_SERVER_HOST
+  TTS_SERVER_PORT: $TTS_SERVER_PORT
+  INNER_RESOURCES_PATH: $INNER_RESOURCES_PATH
+  OUTER_RESOURCES_PATH: $OUTER_RESOURCES_PATH
+
+services:
+  zzalsAI-stts-dev:
+    container_name: stts-inference-${ENV_STATE}-${ENV_INDEX}
+    build:
+      context: ./
+      dockerfile: ./dockerfile
+    image: eninn/ai-server:v0.0-${ENV_STATE}
+    entrypoint:  python app.py
+    environment:
+      <<: *common-variables
+      RUNENV: $ENV_STATE
+    restart: always
+    volumes:
+      - ./:/app
+      - ${OUTER_RESOURCES_PATH}:${INNER_RESOURCES_PATH}
+    ports:
+      - ${TTS_SERVER_PORT}:${TTS_SERVER_PORT}
+    networks:
+      - zzalAI-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['${GPU_DEVICE_INDEX}']
+              capabilities: ['gpu']
+    runtime: nvidia
+
+networks:
+  zzalAI-network:
+    driver: bridge
+
+# docker compose --env-file envs/.env.dev up -d   
