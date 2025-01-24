@@ -67,6 +67,45 @@ class S3Client:
             print(f"클라이언트 에러 발생: {e}")
             return []
 
+class SQSClient:
+    def __init__(self, bucket_name, aws_access_key=None, aws_secret_key=None, region_name='us-east-1'):
+        """
+        S3Client 초기화. 인증 정보가 제공되지 않으면 기본 AWS 설정을 사용.
+        """
+        self.bucket_name = bucket_name
+        try:
+            self.sqs = boto3.client(
+                'sqs',
+                aws_access_key_id=aws_access_key,
+                aws_secret_access_key=aws_secret_key,
+                region_name=region_name
+            )
+        except NoCredentialsError:
+            raise Exception("AWS 자격 증명을 찾을 수 없습니다.")
+        except PartialCredentialsError:
+            raise Exception("AWS 자격 증명이 불완전합니다.")
+        
+    def recevie_message(self, queue_url:str, max_message_num:int=1, wait_sec:int=10):
+        response = self.sqs.receive_message(
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=max_message_num,
+            WaitTimeSeconds=wait_sec
+        )
+        return response
+    
+    def send_message(self, queue_url:str, message_body:dict):
+        self.sqs.send_message(
+            QueueUrl=queue_url,
+            MessageBody=json.dumps(message_body)
+        )
+    
+    def delete_message(self, queue_url:str, receipt_handle):
+        self.sqs.delete_message(
+            QueueUrl=queue_url,
+            ReceiptHandle=receipt_handle
+        )
+    
+
 # 사용 예제
 if __name__ == "__main__":
     BUCKET_NAME = 'your-s3-bucket-name'

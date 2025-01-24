@@ -288,3 +288,88 @@ def parse_vtt(vtt_file_path:Path):
         i += 1
     
     return blocks
+
+
+def text_normalization_number(text):
+    def remove_commas(s):
+        return re.sub(r'(?<=\d),(?=\d)', '', s)
+    
+    if isinstance(text, str):  # 문자열 처리
+        return remove_commas(text)
+    elif isinstance(text, list):  # 리스트 처리
+        return [remove_commas(t) for t in text]
+    else:
+        raise ValueError("Input must be a string or a list of strings.")
+    
+def text_normalization_ko_number_count(text):
+    def transform(text):
+        # 숫자와 단위를 매칭하는 정규식
+        pattern = r'(\d+)(개|명|권|마리|병|집|대|시간|칸)'
+        # 숫자 -> 한글 숫자 변환 사전
+        number_to_korean = {
+            1: "한", 2: "두", 3: "세", 4: "네", 5: "다섯", 6: "여섯", 7: "일곱", 8: "여덟", 9: "아홉", 10: "열"
+            # 11: "열하나", 12: "열둘", 13: "열세", 14: "열네", 15: "열다섯", 16: "열여섯", 17: "열일곱", 18: "열여덟", 19: "열아홉", 20: "스무"
+        }
+        
+        def replace_match(match):
+            num = int(match.group(1))  # 숫자
+            unit = match.group(2)     # 단위
+            if 1 <= num <= 10:        # 1부터 10까지만 한글 숫자로 변환
+                return f"{number_to_korean[num]}{unit}"
+            return f"{num}{unit}"     # 11 이상은 그대로 유지
+        
+        # 정규식으로 변환 처리
+        return re.sub(pattern, replace_match, text)
+
+    if isinstance(text, str):
+        return transform(text)
+    elif isinstance(text, list):
+        return [transform(t) for t in text]
+    else:
+        raise ValueError("Input must be a string or a list of strings.")
+    
+def text_normalization_ko_rule_mapping(text):
+    def transform(text):
+        # 숫자 -> 한글 숫자 변환 사전
+        rule_book = {
+            # 단위
+            r'(\d+)(km)': r'\1 킬로미터', r'(\d+)(m)': r'\1 미터', r'(\d+)(cm)': r'\1 센티미터', r'(\d+)(mm)': r'\1 밀리미터', 
+            r'(\d+)(kg)': r'\1 킬로그램', r'(\d+)(g)': r'\1 그램', r'(\d+)(mg)': r'\1 밀리그램', 
+            r'(\d+)(L)': r'\1 리터', r'(\d+)(mL)': r'\1 밀리리터',
+            r'(\d+)(kHz)': r'\1 킬로헤르츠', r'(\d+)(Hz)': r'\1 헤르츠',
+            r'/h': r'퍼아워', r'/m': r'퍼미닛', r'/s': r'퍼세컨드', 
+            # 수학기호
+            r'(\d+)\+(\d+)': r'\1 더하기 \2', r'(\d+)-(\d+)': r'\1 빼기 \2', r'(\d+)\*(\d+)': r'\1 곱하기 \2', r'(\d+)/(\d+)': r'\1 나누기 \2',
+            # 특수기호
+            r'&': r'앤드', r'%': r'퍼센트', r'\$': r'달러', r'#': r'샾', r'@': r'골뱅이', r'/': r'슬래시', r':': r'콜론', r';': r'세미콜론',
+            r'￥': r'엔', r'元': r'위안',
+            # 고유명사
+            r'WIFI': r'와이파이',
+            r'4$': r'사딸라',
+        }
+        
+        # 숫자=숫자 패턴을 동적으로 처리
+        def handle_equals(match):
+            first_number = match.group(1)
+            second_number = match.group(2)
+
+            # 마지막 숫자의 받침 여부 확인
+            last_digit = int(first_number[-1])
+            particle = "은" if last_digit in [1, 3, 6, 7, 8, 0] else "는"
+
+            return f"{first_number}{particle} {second_number}"
+        
+        for pattern, replacement in rule_book.items():
+            text = re.sub(pattern, replacement, text)
+    
+        # 숫자=숫자 패턴 처리 (동적 조사를 위해)
+        text = re.sub(r'(\d+)=(\d+)', handle_equals, text)
+
+        return text
+
+    if isinstance(text, str):
+        return transform(text)
+    elif isinstance(text, list):
+        return [transform(t) for t in text]
+    else:
+        raise ValueError("Input must be a string or a list of strings.")

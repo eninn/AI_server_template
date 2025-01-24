@@ -34,3 +34,19 @@ def send_telegram_message(bot_token, chat_id, message):
             print(f"에러 발생: {response.status_code}, {response.text}")
     except Exception as e:
         print(f"요청 중 에러 발생: {e}")
+
+def send_request_post(url:str, body:dict, auth_token:str=None):
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "AI-Authentification": auth_token
+        }
+        response = requests.post(url,
+                                 headers=headers,
+                                 json=body)
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+    except requests.exceptions.RequestException as e:
+        print(f"POST 요청 중 오류 발생: {e}")
